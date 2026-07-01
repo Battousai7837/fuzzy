@@ -305,8 +305,8 @@ function App() {
   }, [refreshCatalog, request])
 
   useEffect(() => {
-    refreshProducts(1, false, view === 'admin').catch((error) => setToast(error.message))
-  }, [refreshProducts, view])
+    refreshProducts(1, false, isAdmin && view === 'admin').catch((error) => setToast(error.message))
+  }, [isAdmin, refreshProducts, view])
 
   useEffect(() => {
     refreshMe().catch(() => {
@@ -349,13 +349,13 @@ function App() {
     const observer = new IntersectionObserver((entries) => {
       if (entries.some((entry) => entry.isIntersecting)) {
         if (hasMoreProducts) {
-          refreshProducts(productPage + 1, true, view === 'admin').catch((error) => setToast(error.message))
+          refreshProducts(productPage + 1, true, isAdmin && view === 'admin').catch((error) => setToast(error.message))
         }
       }
     })
     observer.observe(node)
     return () => observer.disconnect()
-  }, [hasMoreProducts, productPage, refreshProducts, view])
+  }, [hasMoreProducts, isAdmin, productPage, refreshProducts, view])
 
   useEffect(() => {
     const updateOnline = () => setIsOnline(navigator.onLine)
@@ -459,6 +459,7 @@ function App() {
 
   const handleAuth = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    const mode = view === 'admin' && !isAdmin ? 'admin' : authMode
     const data = Object.fromEntries(new FormData(event.currentTarget))
     const payload = {
       name: String(data.name ?? ''),
@@ -475,17 +476,17 @@ function App() {
       return
     }
     try {
-      const data = await request<{ token: string; user: User }>(authMode === 'admin' ? '/auth/admin/login' : authMode === 'login' ? '/auth/login' : '/auth/register', {
+      const data = await request<{ token: string; user: User }>(mode === 'admin' ? '/auth/admin/login' : mode === 'login' ? '/auth/login' : '/auth/register', {
         method: 'POST',
         body: JSON.stringify(payload),
       })
-      if (authMode === 'admin') {
+      if (mode === 'admin') {
         setAuth(data.token, data.user)
         setView('admin')
         notify('Dang nhap admin thanh cong')
         return
       }
-      if (authMode === 'register') {
+      if (mode === 'register') {
         clearAuth()
         setRegisteredCredentials({ email: payload.email, password: payload.password })
         setAuthMode('login')
@@ -747,7 +748,7 @@ function App() {
       <section className={`screen ${view === 'profileEdit' ? 'screen-flush' : ''}`}>{content()}</section>
       {view !== 'profileEdit' && <BottomNav view={view} cartCount={cart.length} onOpen={(next) => next === 'cart' || next === 'orders' || next === 'profile' ? openProtected(next) : setView(next)} />}
       <Sidebar open={sidebarOpen} user={user} dark={darkMode} rtl={rtl} isAuthed={isAuthed} onDark={setDarkMode} onRtl={setRtl} onClose={() => setSidebarOpen(false)} onAuth={() => { setSidebarOpen(false); setView('auth') }} onLogout={logout} />
-      {installPrompt && !installDismissed && <InstallPrompt onInstall={installApp} onDismiss={dismissInstall} />}
+      {installPrompt && !installDismissed && !['auth', 'admin'].includes(view) && <InstallPrompt onInstall={installApp} onDismiss={dismissInstall} />}
       {toast && <div className="toast">{toast}</div>}
     </main>
   )

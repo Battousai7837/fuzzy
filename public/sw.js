@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fuzzy-pwa-v6'
+const CACHE_NAME = 'fuzzy-pwa-v8'
 const STATIC_ASSETS = [
   '/',
   '/offline.html',
